@@ -198,6 +198,7 @@ export interface Database {
           is_active: boolean;
           use_count: number;
           last_used_at: string | null;
+          notes: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -209,6 +210,7 @@ export interface Database {
           is_active?: boolean;
           use_count?: number;
           last_used_at?: string | null;
+          notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -220,6 +222,7 @@ export interface Database {
           is_active?: boolean;
           use_count?: number;
           last_used_at?: string | null;
+          notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };

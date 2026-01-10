@@ -28,15 +28,16 @@ interface Keyword {
   is_active: boolean;
   use_count: number;
   last_used_at: string | null;
+  notes: string | null;
 }
 
 // Demo keywords
 const DEMO_KEYWORDS: Keyword[] = [
-  { id: '1', keyword: '健康的な朝食レシピ', priority: 10, is_active: true, use_count: 5, last_used_at: '2024-01-10T09:00:00Z' },
-  { id: '2', keyword: '睡眠の質を上げる方法', priority: 9, is_active: true, use_count: 3, last_used_at: '2024-01-09T10:00:00Z' },
-  { id: '3', keyword: 'ストレス解消法', priority: 8, is_active: true, use_count: 2, last_used_at: null },
-  { id: '4', keyword: '運動習慣の作り方', priority: 7, is_active: false, use_count: 0, last_used_at: null },
-  { id: '5', keyword: 'メンタルヘルスケア', priority: 6, is_active: true, use_count: 1, last_used_at: '2024-01-08T14:00:00Z' },
+  { id: '1', keyword: '健康的な朝食レシピ', priority: 10, is_active: true, use_count: 5, last_used_at: '2024-01-10T09:00:00Z', notes: '自分の朝のルーティンと絡めて書きたい' },
+  { id: '2', keyword: '睡眠の質を上げる方法', priority: 9, is_active: true, use_count: 3, last_used_at: '2024-01-09T10:00:00Z', notes: '最近試したサウナの効果について' },
+  { id: '3', keyword: 'ストレス解消法', priority: 8, is_active: true, use_count: 2, last_used_at: null, notes: null },
+  { id: '4', keyword: '運動習慣の作り方', priority: 7, is_active: false, use_count: 0, last_used_at: null, notes: '3日坊主を克服した体験談' },
+  { id: '5', keyword: 'メンタルヘルスケア', priority: 6, is_active: true, use_count: 1, last_used_at: '2024-01-08T14:00:00Z', notes: null },
 ];
 
 export default function KeywordsPage() {
@@ -96,10 +97,18 @@ export default function KeywordsPage() {
       is_active: true,
       use_count: 0,
       last_used_at: null,
+      notes: null,
     };
 
     setKeywords([newKw, ...keywords]);
     setNewKeyword('');
+    setHasChanges(true);
+  };
+
+  const handleUpdateNotes = (id: string, notes: string) => {
+    setKeywords(keywords.map(k =>
+      k.id === id ? { ...k, notes: notes || null } : k
+    ));
     setHasChanges(true);
   };
 
@@ -314,8 +323,15 @@ export default function KeywordsPage() {
                   </button>
                 </div>
 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 space-y-2">
                   <p className="font-medium truncate">{keyword.keyword}</p>
+                  <input
+                    type="text"
+                    value={keyword.notes || ''}
+                    onChange={(e) => handleUpdateNotes(keyword.id, e.target.value)}
+                    placeholder="私の一言（執筆時のヒント）"
+                    className="w-full px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     使用回数: {keyword.use_count} | 最終使用: {formatDate(keyword.last_used_at)}
                   </p>
