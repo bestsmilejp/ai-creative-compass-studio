@@ -1,12 +1,14 @@
 # Firebase App Hosting セットアップガイド
 
-このドキュメントは、Firebase App Hostingの設定手順をまとめたものです。
+このドキュメントは、AI Creative Compass Studio の Firebase App Hosting 設定手順をまとめたものです。
+
+---
 
 ## 前提条件
 
-- Firebase プロジェクト: `ai-creative-compass-studio`
-- GitHub リポジトリ: `bestsmilejp/ai-creative-compass-studio`
-- Blazeプラン（従量課金）への切り替え済み
+- Firebase プロジェクト作成済み
+- GitHub リポジトリ作成済み
+- Firebase Blazeプラン（従量課金）への切り替え済み
 
 ---
 
@@ -14,9 +16,10 @@
 
 ### 1.1 App Hosting の有効化
 
-1. [Firebase Console](https://console.firebase.google.com/project/ai-creative-compass-studio) にアクセス
-2. 左メニューから **Build > App Hosting** を選択
-3. **Get started** をクリック
+1. [Firebase Console](https://console.firebase.google.com/) にアクセス
+2. 対象プロジェクトを選択
+3. 左メニューから **Build > App Hosting** を選択
+4. **Get started** をクリック
 
 ### 1.2 GitHub 連携
 
@@ -28,97 +31,158 @@
 
 ### 1.3 リポジトリ設定
 
-| 設定項目 | 値 |
-|---------|-----|
-| Repository | `bestsmilejp/ai-creative-compass-studio` |
-| Live branch | `main` |
-| Root directory | `/` (プロジェクトルート) |
+| 設定項目 | 説明 |
+|---------|------|
+| Repository | 対象の GitHub リポジトリを選択 |
+| Live branch | `main` （本番デプロイ用ブランチ） |
+| Root directory | `/` （プロジェクトルート） |
 
 ### 1.4 Firebase Web App の選択
 
-- **Select an existing** を選択
-- 既存の Web App: `ai-creative-compass-studio` を選択
-  - App ID: `1:741518527526:web:da2c649a6316befe93aae7`
+- **Select an existing** を選択し、既存の Web App を選択
+- または **Create new** で新規作成
 
 ### 1.5 リージョン設定
 
-- **Region**: `asia-northeast1` (東京)
+| リージョン | 説明 |
+|-----------|------|
+| `asia-northeast1` | 東京（日本向け推奨） |
+| `asia-southeast1` | シンガポール |
+| `us-central1` | アメリカ中部 |
 
 ---
 
 ## 2. 環境変数の設定
 
-Firebase Console > App Hosting > Settings > Environment variables
+### 2.1 apphosting.yaml での設定
 
-### 2.1 Public 環境変数（ビルド時に埋め込み）
+プロジェクトルートに `apphosting.yaml` を作成：
 
-| 変数名 | 値 |
-|--------|-----|
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | `AIzaSyDo9Z-802xRuuZN4nFrnaaVmGudLbkJGMQ` |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `ai-creative-compass-studio.firebaseapp.com` |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `ai-creative-compass-studio` |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `ai-creative-compass-studio.firebasestorage.app` |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `741518527526` |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | `1:741518527526:web:da2c649a6316befe93aae7` |
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://arxmawrczcqzgizswenn.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | (Supabase Anon Key) |
-| `NEXT_PUBLIC_ENABLE_SUPER_ADMIN` | `false` |
+```yaml
+# Firebase App Hosting configuration
+runConfig:
+  region: asia-southeast1
+  memory: 512MiB
 
-### 2.2 Server-side 環境変数（Secrets）
+env:
+  # Firebase Configuration
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: FIREBASE_API_KEY
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: <project-id>.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: <project-id>
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: <project-id>.firebasestorage.app
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "<sender-id>"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "<app-id>"
 
-Firebase Console > App Hosting > Settings > Secrets で設定
+  # Supabase Configuration
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    value: https://<project-ref>.supabase.co
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    secret: SUPABASE_ANON_KEY
+  - variable: SUPABASE_SERVICE_ROLE_KEY
+    secret: SUPABASE_SERVICE_ROLE_KEY
 
-| シークレット名 | 説明 |
-|---------------|------|
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role Key |
-| `N8N_API_KEY` | n8n API認証キー |
+  # n8n Configuration
+  - variable: N8N_API_KEY
+    secret: N8N_API_KEY
 
-#### シークレットの設定方法（CLI）
+  # App Configuration
+  - variable: NEXT_PUBLIC_ENABLE_SUPER_ADMIN
+    value: "false"
+```
+
+### 2.2 シークレットの設定（Firebase CLI）
 
 ```bash
-firebase apphosting:secrets:set SUPABASE_SERVICE_ROLE_KEY
-# プロンプトで値を入力
+# Firebase プロジェクトを選択
+firebase use <project-id>
 
+# シークレットを設定（対話形式で値を入力）
+firebase apphosting:secrets:set FIREBASE_API_KEY
+firebase apphosting:secrets:set SUPABASE_ANON_KEY
+firebase apphosting:secrets:set SUPABASE_SERVICE_ROLE_KEY
 firebase apphosting:secrets:set N8N_API_KEY
-# プロンプトで値を入力
+```
+
+各シークレット設定時に、apphosting.yaml への追加を確認されたら `Y` を選択。
+
+### 2.3 環境変数一覧
+
+| 変数名 | 種別 | 説明 |
+|--------|------|------|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Secret | Firebase API キー |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Value | Firebase Auth ドメイン |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Value | Firebase プロジェクト ID |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Value | Firebase Storage バケット |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Value | Firebase Messaging Sender ID |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Value | Firebase App ID |
+| `NEXT_PUBLIC_SUPABASE_URL` | Value | Supabase プロジェクト URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Secret | Supabase Anon Key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Secret | Supabase Service Role Key |
+| `N8N_API_KEY` | Secret | n8n API 認証キー |
+| `NEXT_PUBLIC_ENABLE_SUPER_ADMIN` | Value | スーパー管理者機能の有効化 |
+
+---
+
+## 3. プロジェクト内の設定ファイル
+
+### 3.1 firebase.json
+
+```json
+{
+  "hosting": {
+    "source": ".",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "frameworksBackend": {
+      "region": "asia-southeast1"
+    }
+  }
+}
+```
+
+### 3.2 .firebaserc
+
+```json
+{
+  "projects": {
+    "default": "<project-id>"
+  }
+}
 ```
 
 ---
 
-## 3. 自動デプロイの仕組み
+## 4. 自動デプロイの仕組み
 
-### 3.1 トリガー
+### 4.1 トリガー
 
-- `main` ブランチへのプッシュ → **本番デプロイ**
-- Pull Request 作成 → **プレビュー環境作成**
+| イベント | 動作 |
+|---------|------|
+| `main` ブランチへの push | 本番環境にデプロイ |
+| Pull Request 作成 | プレビュー環境を作成 |
 
-### 3.2 ビルドプロセス
+### 4.2 ビルドプロセス
 
 1. GitHub から最新コードを取得
 2. `npm install` で依存関係をインストール
-3. `npm run build` でNext.jsをビルド
+3. `npm run build` で Next.js をビルド
 4. Cloud Run にデプロイ
 
-### 3.3 デプロイ URL
+### 4.3 デプロイ URL
 
-- 本番: `https://ai-creative-compass-studio--main-xxxxxx.asia-northeast1.hosted.app`
-- プレビュー: `https://ai-creative-compass-studio--pr-XX-xxxxxx.asia-northeast1.hosted.app`
-
----
-
-## 4. 関連ファイル
-
-プロジェクト内の Firebase 設定ファイル:
-
-| ファイル | 用途 |
-|----------|------|
-| `firebase.json` | Firebase Hosting 設定 |
-| `.firebaserc` | Firebase プロジェクト設定 |
-| `apphosting.yaml` | App Hosting 環境設定 |
+| 環境 | URL パターン |
+|------|-------------|
+| 本番 | `https://<project>--<backend>.region.hosted.app` |
+| プレビュー | `https://<project>--pr-XX-xxxxx.region.hosted.app` |
 
 ---
 
-## 5. 本番環境での制限
+## 5. 本番環境での制限設定
 
 ### 5.1 スーパー管理者機能の無効化
 
@@ -128,40 +192,64 @@ firebase apphosting:secrets:set N8N_API_KEY
 - `isSuperAdmin` は常に `false` になる
 - サイト管理者機能のみ利用可能
 
-### 5.2 ローカル開発との違い
+### 5.2 ローカルと本番の違い
 
 | 機能 | ローカル | 本番 |
 |------|---------|------|
-| スーパー管理者 | 有効 | 無効 |
+| スーパー管理者 | 有効（`true`） | 無効（`false`） |
 | デモモード | 有効 | 有効 |
 | 管理設定ページ | アクセス可 | アクセス不可 |
 
 ---
 
-## 6. トラブルシューティング
+## 6. n8n API エンドポイント
 
-### 6.1 ビルドエラー
+本番環境で利用可能な API:
+
+| エンドポイント | メソッド | 説明 |
+|---------------|---------|------|
+| `/api/n8n/schedules/due` | GET | 実行予定のスケジュール取得 |
+| `/api/n8n/schedules/due` | POST | スケジュール実行完了を記録 |
+| `/api/n8n/jobs` | POST | 新規ジョブ作成 |
+| `/api/n8n/jobs` | GET | ジョブ一覧取得 |
+| `/api/n8n/jobs/[jobId]` | PATCH | ジョブステータス更新 |
+| `/api/n8n/sites/[siteId]/keywords` | GET | サイトのキーワード取得 |
+| `/api/n8n/sites/[siteId]/keywords` | POST | キーワード使用回数更新 |
+
+**認証**: すべてのリクエストに `x-api-key` ヘッダーが必要
+
+---
+
+## 7. トラブルシューティング
+
+### 7.1 ビルドエラー
 
 Firebase Console > App Hosting > Builds でログを確認
 
-### 6.2 環境変数が反映されない
+### 7.2 環境変数が反映されない
 
-1. Firebase Console で環境変数を確認
-2. 新しいデプロイをトリガー（空コミットでも可）:
-   ```bash
-   git commit --allow-empty -m "Trigger rebuild"
-   git push origin main
-   ```
+```bash
+# 空コミットでリビルドをトリガー
+git commit --allow-empty -m "Trigger rebuild"
+git push origin main
+```
 
-### 6.3 GitHub ブランチが認識されない
+### 7.3 GitHub ブランチが認識されない
 
 1. GitHub > Settings > Applications > Firebase
 2. Configure でリポジトリへのアクセス権を確認
 3. Firebase Console でリフレッシュ
 
+### 7.4 シークレットの確認
+
+Google Cloud Console > Secret Manager で確認:
+```
+https://console.cloud.google.com/security/secret-manager?project=<project-id>
+```
+
 ---
 
-## 7. 料金目安
+## 8. 料金目安
 
 | トラフィック | 月額目安 |
 |-------------|---------|
@@ -169,13 +257,13 @@ Firebase Console > App Hosting > Builds でログを確認
 | 100,000 アクセス/月 | $5〜15 |
 | 1,000,000 アクセス/月 | $50〜100+ |
 
-※ Blazeプラン新規登録時は $300 の無料クレジットあり
+※ Blaze プラン新規登録時は $300 の無料クレジットあり
 
 ---
 
-## 8. 参考リンク
+## 9. 参考リンク
 
 - [Firebase App Hosting ドキュメント](https://firebase.google.com/docs/app-hosting)
 - [Firebase App Hosting 料金](https://firebase.google.com/docs/app-hosting/costs)
-- [Firebase Console](https://console.firebase.google.com/project/ai-creative-compass-studio)
-- [GitHub リポジトリ](https://github.com/bestsmilejp/ai-creative-compass-studio)
+- [Firebase Console](https://console.firebase.google.com/)
+- [Google Cloud Secret Manager](https://console.cloud.google.com/security/secret-manager)
