@@ -1,0 +1,35 @@
+# Firebase App Hosting configuration
+runConfig:
+  region: asia-southeast1
+  memory: 512MiB
+
+env:
+  # Firebase Configuration
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: FIREBASE_API_KEY
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: ai-creative-compass-studio.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: ai-creative-compass-studio
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: ai-creative-compass-studio.firebasestorage.app
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "741518527526"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:741518527526:web:da2c649a6316befe93aae7"
+
+  # Supabase Configuration
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    value: https://arxmawrczcqzgizswenn.supabase.co
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    secret: SUPABASE_ANON_KEY
+  - variable: SUPABASE_SERVICE_ROLE_KEY
+    secret: SUPABASE_SERVICE_ROLE_KEY
+
+  # n8n Configuration
+  - variable: N8N_API_KEY
+    secret: N8N_API_KEY
+
+  # App Configuration
+  - variable: NEXT_PUBLIC_ENABLE_SUPER_ADMIN
+    value: "false"
