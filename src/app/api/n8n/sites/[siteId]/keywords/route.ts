@@ -42,6 +42,21 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '10');
     const activeOnly = searchParams.get('active') !== 'false';
 
+    // Fetch site info (including system_prompt)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: site, error: siteError } = await (supabaseAdmin as any)
+      .from('sites')
+      .select('id, name, system_prompt, wp_url, wp_username, wp_app_password')
+      .eq('id', siteId)
+      .single();
+
+    if (siteError || !site) {
+      return NextResponse.json(
+        { error: 'Site not found' },
+        { status: 404 }
+      );
+    }
+
     // Fetch keywords
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query = (supabaseAdmin as any)
@@ -65,9 +80,27 @@ export async function GET(
       );
     }
 
+    // Include site info with each keyword for easy access after Split Out
+    const keywordsWithSite = (keywords || []).map((kw: Record<string, unknown>) => ({
+      ...kw,
+      site: {
+        id: site.id,
+        name: site.name,
+        system_prompt: site.system_prompt,
+        wp_url: site.wp_url,
+        wp_username: site.wp_username,
+        wp_app_password: site.wp_app_password,
+      },
+    }));
+
     return NextResponse.json({
-      keywords: keywords || [],
-      count: (keywords || []).length,
+      keywords: keywordsWithSite,
+      count: keywordsWithSite.length,
+      site: {
+        id: site.id,
+        name: site.name,
+        system_prompt: site.system_prompt,
+      },
     });
   } catch (error) {
     console.error('Error fetching keywords:', error);
