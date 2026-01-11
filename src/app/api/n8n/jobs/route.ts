@@ -16,7 +16,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  * Body:
  *   {
  *     "siteId": "uuid",
- *     "wpPostId": 123,
+ *     "wpPostId": 123,           // optional - can be added later via PATCH
  *     "idempotencyKey": "optional-unique-key"
  *   }
  */
@@ -50,9 +50,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!wpPostId || typeof wpPostId !== 'number') {
+    // wpPostId is optional - can be set later via PATCH when article is posted to WordPress
+    if (wpPostId !== undefined && wpPostId !== null && typeof wpPostId !== 'number') {
       return NextResponse.json(
-        { error: 'Invalid or missing wpPostId' },
+        { error: 'wpPostId must be a number if provided' },
         { status: 400 }
       );
     }
@@ -90,28 +91,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 6. Check for active job on same site/post
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: activeJob } = await (supabaseAdmin as any)
-      .from('article_jobs')
-      .select('*')
-      .eq('site_id', siteId)
-      .eq('wp_post_id', wpPostId)
-      .in('status', ['pending', 'processing'])
-      .single();
+    // 6. Check for active job on same site/post (only if wpPostId provided)
+    if (wpPostId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: activeJob } = await (supabaseAdmin as any)
+        .from('article_jobs')
+        .select('*')
+        .eq('site_id', siteId)
+        .eq('wp_post_id', wpPostId)
+        .in('status', ['pending', 'processing'])
+        .single();
 
-    if (activeJob) {
-      return NextResponse.json({
-        status: 'already_processing',
-        job: activeJob as ArticleJob,
-        message: 'A job for this article is already in progress',
-      });
+      if (activeJob) {
+        return NextResponse.json({
+          status: 'already_processing',
+          job: activeJob as ArticleJob,
+          message: 'A job for this article is already in progress',
+        });
+      }
     }
 
     // 7. Create new job
     const jobData = {
       site_id: siteId,
-      wp_post_id: wpPostId,
+      wp_post_id: wpPostId || null,
       idempotency_key: idempotencyKey || null,
       status: 'pending',
       created_at: new Date().toISOString(),

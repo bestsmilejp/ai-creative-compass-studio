@@ -114,7 +114,7 @@ export async function PATCH(
 
     // 3. Parse and validate request body
     const body: UpdateJobRequest = await request.json();
-    const { status, resultData, errorMessage } = body;
+    const { status, resultData, errorMessage, wpPostId } = body;
 
     if (!status || !VALID_STATUSES.includes(status)) {
       return NextResponse.json(
@@ -176,6 +176,11 @@ export async function PATCH(
     // Add error message for failed jobs
     if (status === 'failed' && errorMessage) {
       updateData.error_message = errorMessage;
+    }
+
+    // Add wpPostId if provided (for updating after WordPress post is created)
+    if (wpPostId !== undefined && wpPostId !== null) {
+      updateData.wp_post_id = wpPostId;
     }
 
     // 7. Update job

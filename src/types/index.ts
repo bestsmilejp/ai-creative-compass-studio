@@ -41,7 +41,7 @@ export interface ArticleJob {
 // Create job request from n8n
 export interface CreateJobRequest {
   siteId: string;
-  wpPostId: number;
+  wpPostId?: number;  // Optional - can be set later via PATCH after WordPress posting
   idempotencyKey?: string;
   metadata?: Record<string, unknown>;
 }
@@ -51,4 +51,5 @@ export interface UpdateJobRequest {
   status: ArticleJobStatus;
   resultData?: Record<string, unknown>;
   errorMessage?: string;
+  wpPostId?: number;
 }
