@@ -16,6 +16,8 @@ import {
   AlertCircle,
   FileText,
   Calendar,
+  MoreVertical,
+  StopCircle,
 } from 'lucide-react';
 
 // UUID validation regex
@@ -112,6 +114,8 @@ export default function JobsDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [siteName, setSiteName] = useState<string>('');
   const [filter, setFilter] = useState<ArticleJobStatus | 'all'>('all');
+  const [updatingJobId, setUpdatingJobId] = useState<string | null>(null);
+  const [openMenuJobId, setOpenMenuJobId] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async (showRefreshing = false) => {
     if (!user || !siteId) return;
@@ -149,6 +153,51 @@ export default function JobsDashboardPage() {
     fetchJobs();
   }, [fetchJobs]);
 
+  // Update job status
+  const updateJobStatus = async (jobId: string, newStatus: ArticleJobStatus, errorMessage?: string) => {
+    if (isDemoMode) {
+      // Demo mode: update local state
+      setJobs(prev => prev.map(job =>
+        job.id === jobId
+          ? {
+              ...job,
+              status: newStatus,
+              completed_at: newStatus === 'completed' || newStatus === 'failed' ? new Date().toISOString() : job.completed_at,
+              error_message: newStatus === 'failed' ? (errorMessage || '管理者により終了') : null,
+            }
+          : job
+      ));
+      setOpenMenuJobId(null);
+      return;
+    }
+
+    setUpdatingJobId(jobId);
+    try {
+      const response = await fetch(`/api/sites/${siteId}/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          errorMessage: newStatus === 'failed' ? (errorMessage || '管理者により終了') : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'ステータスの更新に失敗しました');
+      }
+
+      // Refresh jobs list
+      await fetchJobs();
+    } catch (err) {
+      console.error('Failed to update job status:', err);
+      setError(err instanceof Error ? err.message : 'エラーが発生しました');
+    } finally {
+      setUpdatingJobId(null);
+      setOpenMenuJobId(null);
+    }
+  };
+
   // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -157,6 +206,17 @@ export default function JobsDashboardPage() {
 
     return () => clearInterval(interval);
   }, [fetchJobs]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (openMenuJobId && !(e.target as Element).closest('.relative')) {
+        setOpenMenuJobId(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openMenuJobId]);
 
   const filteredJobs = filter === 'all'
     ? jobs
@@ -309,12 +369,15 @@ export default function JobsDashboardPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   エラー
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  操作
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredJobs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>ジョブがありません</p>
                   </td>
@@ -350,6 +413,41 @@ export default function JobsDashboardPage() {
                           </span>
                         ) : (
                           <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {(job.status === 'processing' || job.status === 'pending') && (
+                          <div className="relative">
+                            <button
+                              onClick={() => setOpenMenuJobId(openMenuJobId === job.id ? null : job.id)}
+                              disabled={updatingJobId === job.id}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                            >
+                              {updatingJobId === job.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreVertical className="h-4 w-4" />
+                              )}
+                            </button>
+                            {openMenuJobId === job.id && (
+                              <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                                <button
+                                  onClick={() => updateJobStatus(job.id, 'completed')}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                  完了にする
+                                </button>
+                                <button
+                                  onClick={() => updateJobStatus(job.id, 'failed', '管理者により終了')}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                >
+                                  <StopCircle className="h-4 w-4 text-red-600" />
+                                  失敗にする
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
                     </tr>
